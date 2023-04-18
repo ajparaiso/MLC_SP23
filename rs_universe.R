@@ -64,7 +64,7 @@ rs_shares_19_21 <- rs_19_21 %>%
          rs_share_21 = rs_units_21 / total_units_21) 
 
 # export rs_share_19_21 as csv
-write_csv(rs_shares_19_21, "~/Desktop/Machine Learning for Cities/Final Project/raw_data/rs_shares_19_21.csv")
+write_csv(rs_shares_19_21, "~/Desktop/rs_shares_19_21.csv")
 
 
 
