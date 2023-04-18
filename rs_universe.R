@@ -61,8 +61,10 @@ rs_shares_19_21 <- rs_19_21 %>%
          total_units_21 > 0) %>%
   mutate(rs_share_19 = rs_units_19 / total_units_19,
          rs_share_20 = rs_units_20 / total_units_20,
-         rs_share_21 = rs_units_21 / total_units_21) %>%
-  glimpse()
+         rs_share_21 = rs_units_21 / total_units_21) 
+
+# export rs_share_19_21 as csv
+write_csv(rs_shares_19_21, "~/Desktop/Machine Learning for Cities/Final Project/raw_data/rs_shares_19_21.csv")
 
 
 
