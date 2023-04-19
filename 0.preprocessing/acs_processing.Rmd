@@ -11,6 +11,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ```{r}
 library(tidyverse)
+library(naniar)
 ```
 
 # read data
@@ -21,7 +22,7 @@ acs <- read_csv("/Users/cpreeldumas/Documents/GitHub/MLC_SP23/raw_data/acs5yr_tr
 rentstab <- read_csv("/Users/cpreeldumas/Documents/GitHub/MLC_SP23/clean_data/rs_shares_19_21.csv")
 
 pluto <- read_csv("/Users/cpreeldumas/Desktop/NYU/SPRING 2023/ML for Cities/Project/pluto_23v1.csv") %>% 
-  select(bbl, bct2020, ct2010, borough, tract2010)
+  select(bbl, bct2020, ct2010, borough, tract2010, cd)
 ```
 
 # filter pluto to rentstab universe
@@ -94,7 +95,7 @@ acs_21 <- acs %>%
 # join acs-pluto
 ```{r}
 acs_bbl_full <- pluto_univ2 %>% 
-  select(bbl, geoid_19, geoid_21) %>% 
+  select(bbl, cd, geoid_19, geoid_21) %>% 
   left_join(acs_19, by = "geoid_19") %>% 
   left_join(acs_21, by = "geoid_21") %>% 
   rename(tract_19 = geoid_19, 
@@ -102,7 +103,7 @@ acs_bbl_full <- pluto_univ2 %>%
 
 #keeping just percentages, averages, medians, and diversity index
 acs_bbl <- acs_bbl_full %>% 
-  select(bbl, tract_19, geo_name_19, tract_21, geo_name_21, 
+  select(bbl, cd, tract_19, geo_name_19, tract_21, geo_name_21, 
          ends_with(c("avg_19", "med_19", "pct_19", "idx_19",
                      "avg_21", "med_21", "pct_21", "idx_21")))
 ```
@@ -174,12 +175,33 @@ remove_cols <- c(
 )
 ```
 
+# remove columns and impute means
+```{r}
+acs_bbl_final <- acs_bbl %>% 
+  filter(!is.na(tract_19) & !is.na(tract_21)) %>%
+  select(!all_of(remove_cols)) %>%
+  mutate(
+    bbl = as.character(bbl),
+    cd = as.character(cd)) %>% 
+  group_by(cd) %>%
+  mutate(
+    across(
+    where(is.numeric),
+    ~replace_na(., mean(., na.rm=TRUE))
+    )) %>% 
+  ungroup()
+
+miss_var_summary(acs_bbl)
+miss_var_summary(acs_bbl_final)
+
+
+
+```
+
+
 # save data
 ```{r}
-acs_bbl %>% 
-  filter(!is.na(tract_19) & !is.na(tract_21)) %>%
-  select(!all_of(remove_cols)) %>% 
-  write_csv("/Users/cpreeldumas/Documents/GitHub/MLC_SP23/clean_data/acs_bbl.csv")
+write_csv("/Users/cpreeldumas/Documents/GitHub/MLC_SP23/clean_data/acs_bbl.csv")
 
 # acs_bbl_full %>% 
 #   filter(!is.na(tract_19) & !is.na(tract_21)) %>%
