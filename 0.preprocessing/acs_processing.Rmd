@@ -202,6 +202,8 @@ acs_bbl_final %>%
   group_by(cd, hh_inc_med_19) %>% 
   tally()
 ```
+
+# bbl 4000260003 is problematic
 ```{r}
 #rowwise missingness? 
 acs_bbl %>% 
@@ -217,15 +219,20 @@ acs_bbl %>%
   select(where(is.numeric), -cd) %>%
   slice(36717)
   
+acs_bbl %>% 
+  filter(bbl == "4000260003") %>% 
+  filter(!is.na(tract_19) & !is.na(tract_21)) %>%
+  select(!all_of(remove_cols)) %>%
+  select(-cd, -tract_19, -tract_21) %>%  
+  pivot_longer(-bbl, names_to = "var", values_to = "value") %>% 
+  filter(is.na(value))
 
-acs_bbl_final %>% filter(bbl == "4000260003")
+acs_bbl %>% 
+  filter(tract_21 == "36081000103")
 
+rentstab %>% 
+  filter(bbl == "4000260003")
 ```
-```{r}
-pluto %>% filter(bbl == "4000260003")
-```
-
-
 # save data
 ```{r}
 write_csv(acs_bbl_final, "/Users/cpreeldumas/Documents/GitHub/MLC_SP23/clean_data/acs_bbl.csv")
