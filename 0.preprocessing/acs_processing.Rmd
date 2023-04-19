@@ -194,14 +194,41 @@ acs_bbl_final <- acs_bbl %>%
 miss_var_summary(acs_bbl)
 miss_var_summary(acs_bbl_final)
 
+#spot checking median inc
+acs_bbl_final %>% 
+  filter(bbl %in% c(acs_bbl %>% 
+                      filter(!is.na(tract_19) & !is.na(tract_21) & is.na(hh_inc_med_19)) %>% 
+                      pull(bbl))) %>% 
+  group_by(cd, hh_inc_med_19) %>% 
+  tally()
+```
+```{r}
+#rowwise missingness? 
+acs_bbl %>% 
+  filter(!is.na(tract_19) & !is.na(tract_21)) %>%
+  select(!all_of(remove_cols)) %>%
+  select(where(is.numeric), -cd) %>%
+  miss_case_summary()
 
+#this bbl has 48% missingness, almost everything is missing for 2021
+acs_bbl %>% 
+  filter(!is.na(tract_19) & !is.na(tract_21)) %>%
+  select(!all_of(remove_cols)) %>%
+  select(where(is.numeric), -cd) %>%
+  slice(36717)
+  
 
+acs_bbl_final %>% filter(bbl == "4000260003")
+
+```
+```{r}
+pluto %>% filter(bbl == "4000260003")
 ```
 
 
 # save data
 ```{r}
-write_csv("/Users/cpreeldumas/Documents/GitHub/MLC_SP23/clean_data/acs_bbl.csv")
+write_csv(acs_bbl_final, "/Users/cpreeldumas/Documents/GitHub/MLC_SP23/clean_data/acs_bbl.csv")
 
 # acs_bbl_full %>% 
 #   filter(!is.na(tract_19) & !is.na(tract_21)) %>%
