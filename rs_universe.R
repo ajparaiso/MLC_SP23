@@ -75,6 +75,13 @@ rs_shares_19_21 <- rs_19_21 %>%
 write_csv(rs_shares_19_21, "~/Desktop/rs_shares_19_21.csv")
 
 
+# Exploratory --------------------------------------
 
+# n buildings by building class
+test_table <- rs_shares_19_21 %>%
+  group_by(bldg_class) %>%
+  summarize(n_buildings = n()) %>%
+  ungroup() %>%
+  arrange(desc(n_buildings))
 
 
