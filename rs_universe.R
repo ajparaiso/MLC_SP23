@@ -28,34 +28,42 @@ rs_19_21 <- read_csv("https://s3.amazonaws.com/justfix-data/rentstab_counts_from
   
 # pluto data 2019
 pluto_19 <- read_sf("~/Desktop/Machine Learning for Cities/Final Project/nyc_mappluto_19v2_arc_shp/MapPLUTO.shp") %>%
+  # drop buildings with condos 
+  filter(!grepl('^R', BldgClass)) %>%
   transmute(bbl = as.character(BBL),
             total_units_19 = UnitsRes) %>%
   st_drop_geometry()
 
 # pluto data 2020
 pluto_20 <- read_sf("~/Desktop/Machine Learning for Cities/Final Project/nyc_mappluto_20v8_arc_shp/MapPLUTO.shp") %>%
+  filter(!grepl('^R', BldgClass)) %>%
   transmute(bbl = as.character(BBL),
             total_units_20 = UnitsRes) %>%
   st_drop_geometry()
 
 # pluto data 2021
 pluto_21 <- read_sf("~/Desktop/Machine Learning for Cities/Final Project/nyc_mappluto_21v3_arc_shp/MapPLUTO.shp") %>%
+  filter(!grepl('^R', BldgClass)) %>%
   transmute(bbl = as.character(BBL),
             total_units_21 = UnitsRes,
             boro = as.character(BoroCode),
             cd = as.character(CD),
             # only 2010 census tracts are available through pluto 
             ct_10 = Tract2010,
-            year_built = YearBuilt)
+            year_built = YearBuilt,
+            bldg_class = BldgClass) %>%
+  st_drop_geometry()
 
 
 # Create Tables ------------------------------------
 
 # rs shares 2019 - 2021
 rs_shares_19_21 <- rs_19_21 %>%
-  left_join(pluto_19, by = 'bbl') %>%
-  left_join(pluto_20, by = 'bbl') %>%
-  left_join(pluto_21, by = 'bbl') %>%
+  # filter out buildings where there are no rs units for any of the years 
+  filter(!(rs_units_19 == 0 & rs_units_20 == 0 & rs_units_21 == 0)) %>%
+  inner_join(pluto_19, by = 'bbl') %>%
+  inner_join(pluto_20, by = 'bbl') %>%
+  inner_join(pluto_21, by = 'bbl') %>%
   filter(total_units_19 > 0,
          total_units_20 > 0,
          total_units_21 > 0) %>%
