@@ -66,10 +66,19 @@ rs_shares_19_21 <- rs_19_21 %>%
   inner_join(pluto_21, by = 'bbl') %>%
   filter(total_units_19 > 0,
          total_units_20 > 0,
-         total_units_21 > 0) %>%
+         total_units_21 > 0,
+         rs_units_19 <= total_units_19,
+         rs_units_20 <= total_units_20,
+         rs_units_21 <= total_units_21,
+         year_built != 0) %>%
   mutate(rs_share_19 = rs_units_19 / total_units_19,
          rs_share_20 = rs_units_20 / total_units_20,
          rs_share_21 = rs_units_21 / total_units_21) 
+
+test_table <- rs_shares_19_21 %>%
+  filter(rs_units_19 > total_units_19 |
+           rs_units_20 > total_units_19 |
+           rs_units_21 > total_units_19) 
 
 # export rs_share_19_21 as csv
 write_csv(rs_shares_19_21, "~/Desktop/rs_shares_19_21.csv")
