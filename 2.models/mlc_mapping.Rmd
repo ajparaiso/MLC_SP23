@@ -1,0 +1,157 @@
+---
+title: "Mapping the Predicted Loss of NYC Rent-Stabilization"
+author: "Camille Preel-Dumas"
+date: "Last Updated: `r format(Sys.time(), '%d %B, %Y')`"
+output:
+  html_document:
+    code_folding: hide
+    highlight: tango
+    theme: united
+    toc: yes
+    toc_depth: 4
+    toc_float: yes
+always_allow_html: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(message = FALSE, warning = FALSE)
+```
+
+```{r}
+library(tidyverse)
+library(leaflet)
+library(RColorBrewer)
+library(sf)
+library(htmltools)
+```
+
+```{r}
+# read data
+df_pred_small <- read_csv("/Users/cpreeldumas/Documents/GitHub/MLC_SP23/clean_data/df_pred_small.csv") %>% 
+  rename(BBL = bbl)
+
+df_pred_big <- read_csv("/Users/cpreeldumas/Documents/GitHub/MLC_SP23/clean_data/df_pred_big.csv") %>% 
+  rename(BBL = bbl)
+
+pluto <- read_sf("/Users/cpreeldumas/Desktop/NYU/SPRING 2023/ML for Cities/Project/nyc_mappluto_23v1_shp/MapPLUTO.shp")
+
+cdist <- read_sf("/Users/cpreeldumas/Desktop/NYU/SPRING 2023/ML for Cities/Project/nycd_23a/nycd.shp") %>% 
+  rename(CD = BoroCD)
+```
+
+# BBL level, Small Buildings
+```{r}
+# prep data
+df_small <- pluto %>% 
+  select(BBL, CD, BCT2020, Borough) %>% 
+  inner_join(df_pred_small %>% select(BBL, preds_small), by = "BBL") %>% 
+  st_as_sf
+```
+
+```{r}
+pal_small <- colorBin(c("#BD0026", "#F03B20", "#FD8D3C", "#FECC5C", "#FFFFB2"), 
+                      domain = df_small$preds_small, bin = 5)
+
+
+leaflet() %>% 
+  addProviderTiles(providers$CartoDB.Positron) %>% 
+  addPolygons(data = df_small %>% st_transform(4326),
+              stroke = ~pal_small(preds_small),
+              color = ~pal_small(preds_small),
+              weight = 5,
+              fillOpacity = 0.7) %>% 
+  addLegend("bottomright", pal = pal_small, values = df_small$preds_small, 
+            opacity = 1, title = HTML('Change in Share of RS Units <br>
+                                      Small Buildings')) 
+
+```
+
+<br>
+
+****
+
+<br>
+
+# CD level
+```{r}
+# prep data
+df_small_cd <- pluto %>% 
+  st_drop_geometry() %>% 
+  select(BBL, CD, BCT2020, Borough) %>% 
+  inner_join(df_pred_small, by = "BBL") %>% 
+  group_by(CD) %>% 
+  summarise(mean_preds_small = round(mean(preds_small, na.rm = TRUE), digits = 3)) %>% 
+  inner_join(cdist, by = "CD") %>% 
+  st_as_sf
+
+df_big_cd <- pluto %>% 
+  st_drop_geometry() %>% 
+  select(BBL, CD, BCT2020, Borough) %>% 
+  inner_join(df_pred_big, by = "BBL") %>% 
+  group_by(CD) %>% 
+  summarise(mean_preds_big = round(mean(preds_big, na.rm = TRUE), digits = 3)) %>% 
+  inner_join(cdist, by = "CD") %>% 
+  st_as_sf
+```
+
+## Small Buildings
+```{r}
+
+pal_small <- colorBin(c("#BD0026", "#F03B20", "#FD8D3C", "#FECC5C", "#FFFFB2"), 
+                      domain = df_small_cd$mean_preds_small, bin = 5)
+
+leaflet() %>% 
+  addProviderTiles(providers$CartoDB.Positron) %>% 
+  addPolygons(group = "Small Buildings",
+              data = df_small_cd %>%  st_transform(4326),
+              fillColor = ~pal_small(mean_preds_small),
+              weight = 1,
+              color = "black", 
+              fillOpacity = 0.7, 
+              popup = paste0(
+                "<b>CD: </b>",
+                df_small_cd$CD,
+                "<br>",
+                "<b>Mean Change in Share of RS Units: </b>",
+                df_small_cd$mean_preds_small
+              )) %>% 
+  addLegend("bottomright", pal = pal_small, values = df_small_cd$mean_preds_small, 
+            opacity = 1, title = HTML(
+            'CD-Level Mean Change in <br>
+            Share of RS Units <br>
+            Small Buildings')) 
+
+```
+
+## Big Buildings
+```{r}
+pal_big <- colorBin(c("#FD8D3C", "#FECC5C", "#FFFFB2"), 
+                      domain = df_big_cd$mean_preds_big, bin = 3)
+
+leaflet() %>% 
+  addProviderTiles(providers$CartoDB.Positron) %>% 
+    addPolygons(
+              data = df_big_cd %>%  st_transform(4326),
+              fillColor = ~pal_big(mean_preds_big),
+              weight = 1,
+              color = "black", 
+              fillOpacity = 0.7, 
+              popup = paste0(
+                "<b>CD: </b>",
+                df_big_cd$CD,
+                "<br>",
+                "<b>Mean Change in Share of RS Units: </b>",
+                df_big_cd$mean_preds_big
+              )) %>% 
+  addLegend("bottomright", pal = pal_big, values = df_big_cd$mean_preds_big, 
+            opacity = 1, title = HTML(
+            'CD-Level Mean Change in <br>
+            Share of RS Units <br>
+            Big Buildings'))
+```
+
+
+
+
+
+
